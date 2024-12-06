@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Losowe nuty</title>
   <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ml5@0.12.2/dist/ml5.min.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -61,7 +63,7 @@
 
     // Lista możliwych tonacji
     const keys = [
-      'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'
+      'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'Gb'
     ];
 
     function getRandomKey() {
@@ -116,7 +118,8 @@
         'Ab': { 'b': 'b', 'e': 'b', 'a': 'b', 'd': 'b' },
         'Eb': { 'b': 'b', 'e': 'b', 'a': 'b' },
         'Bb': { 'b': 'b', 'e': 'b' },
-        'F': { 'b': 'b' }
+        'F': { 'b': 'b' },
+        'Gb': { 'b': 'b', 'e': 'b', 'a': 'b', 'd': 'b', 'g': 'b', 'c': 'b' } // Dodano G♭
       };
 
       const keyAccidental = keyAccidentals[keySignature]?.[noteWithoutOctave];
@@ -203,6 +206,39 @@
     document.getElementById("noteCount").addEventListener("input", function () {
       document.getElementById("noteCountValue").textContent = this.value;
     });
+
+    let classifier;
+
+    function setupAudioClassifier() {
+      const options = {
+        probabilityThreshold: 0.85 // Minimalna pewność wykrycia
+      };
+
+      // Wczytanie wstępnie wytrenowanego modelu do rozpoznawania dźwięków
+      classifier = ml5.soundClassifier('https://teachablemachine.withgoogle.com/models/aBcDeFgH/model.json', options, modelLoaded);
+    }
+
+    function modelLoaded() {
+      console.log("Model audio został załadowany.");
+      classifier.classify(gotSound);
+    }
+
+    function gotSound(error, results) {
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      // Sprawdzanie, czy wykryto dźwięk "Snap" (pstrykanie palcami)
+      if (results[0].label === "Snap") {
+        console.log("Wykryto pstryknięcie palcami!");
+        drawStaff(); // Generowanie nowej melodii
+      }
+    }
+
+    // Uruchomienie klasyfikatora dźwięków
+    setupAudioClassifier();
+
 
     drawStaff();
   </script>
