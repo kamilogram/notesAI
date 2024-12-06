@@ -73,32 +73,40 @@
       const lowerOctave = parseInt(lowerNote.split('/')[1]);
       const upperOctave = parseInt(upperNote.split('/')[1]);
 
-      const randomOctave = Math.floor(Math.random() * (upperOctave - lowerOctave + 1)) + lowerOctave;
-      const availableNotes =
-        randomOctave === lowerOctave
-          ? notes.slice(notes.indexOf(lowerNote[0]))
-          : randomOctave === upperOctave
-          ? notes.slice(0, notes.indexOf(upperNote[0]) + 1)
-          : notes;
+      // Utwórz pełną listę dostępnych nut w zakresie
+      const availableNotes = [];
+      for (let octave = lowerOctave; octave <= upperOctave; octave++) {
+        notes.forEach(note => {
+          const fullNote = `${note}/${octave}`;
+          // Uwzględnij zakres dolnej i górnej granicy
+          if (
+            (octave > lowerOctave || notes.indexOf(note) >= notes.indexOf(lowerNote[0])) &&
+            (octave < upperOctave || notes.indexOf(note) <= notes.indexOf(upperNote[0]))
+          ) {
+            availableNotes.push(fullNote);
+          }
+        });
+      }
 
+      // Losuj jedną nutę z dostępnych w zakresie
       const randomNote = availableNotes[Math.floor(Math.random() * availableNotes.length)];
 
-      // Sprawdzenie wyjątków dla C, F, B, E
-      if (randomNote === 'c' || randomNote === 'f') {
-        allowedAccidentals = allowedAccidentals.filter(acc => acc !== 'b'); // Usuwamy bemol dla C i F
+      // Usuń bemol dla nuty C i F oraz krzyżyk dla B i E
+      const noteWithoutOctave = randomNote.split('/')[0];
+      if (noteWithoutOctave === 'c' || noteWithoutOctave === 'f') {
+        allowedAccidentals = allowedAccidentals.filter(acc => acc !== 'b');
       }
-      if (randomNote === 'b' || randomNote === 'e') {
-        allowedAccidentals = allowedAccidentals.filter(acc => acc !== '#'); // Usuwamy krzyżyk dla B i E
+      if (noteWithoutOctave === 'b' || noteWithoutOctave === 'e') {
+        allowedAccidentals = allowedAccidentals.filter(acc => acc !== '#');
       }
 
-      // Losowanie znaku chromatycznego
+      // Losowanie znaku chromatycznego z określonym prawdopodobieństwem
       let accidental = '';
-      // Zwiększamy szansę na przypisanie znaku chromatycznego (50% szansy, aby znak chromatyczny się pojawił)
-      if (Math.random() < 0.75 && allowedAccidentals.length > 0) { // 75% szansy na przydzielenie znaku
+      if (Math.random() < 0.5 && allowedAccidentals.length > 0) { // 50% szans na znak chromatyczny
         accidental = allowedAccidentals[Math.floor(Math.random() * allowedAccidentals.length)];
       }
 
-      // Sprawdzenie, czy nuta już ma ten znak w tonacji
+      // Sprawdzenie znaków chromatycznych zgodnie z tonacją
       const keyAccidentals = {
         'C': {}, 'G': { 'f': '#' }, 'D': { 'f': '#', 'c': '#' },
         'A': { 'f': '#', 'c': '#', 'g': '#' }, 'E': { 'f': '#', 'c': '#', 'g': '#', 'd': '#' },
@@ -111,14 +119,12 @@
         'F': { 'b': 'b' }
       };
 
-      const noteWithoutOctave = randomNote;
-      const keyAccidental = keyAccidentals[keySignature]?.[noteWithoutOctave[0]]; // Pierwsza litera nuty
-
+      const keyAccidental = keyAccidentals[keySignature]?.[noteWithoutOctave];
       if (accidental && keyAccidental === accidental) {
-        accidental = 'n'; // Dodaj kasownik, jeśli nuta zgodna z tonacją
+        accidental = 'n'; // Kasownik, jeśli nuta zgodna z tonacją
       }
 
-      return { key: `${randomNote}/${randomOctave}`, accidental };
+      return { key: randomNote, accidental };
     }
 
     function drawStaff() {
